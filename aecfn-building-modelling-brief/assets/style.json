@@ -1,0 +1,196 @@
+{
+ "underlay": {
+  "fade": 0.35
+ },
+ "title_strip": [
+  33,
+  37,
+  45
+ ],
+ "kinds": {
+  "measured": {
+   "label": "solid = MEASURED (value from spec, key cited)",
+   "dash_px": null
+  },
+  "assumed": {
+   "label": "dashed = ASSUMED (not in spec; source cited)",
+   "dash_px": [
+    18,
+    10
+   ]
+  },
+  "observed": {
+   "label": "dotted = OBSERVED (photo / drawing graphics; not measured)",
+   "dash_px": [
+    3,
+    8
+   ]
+  },
+  "issue": {
+   "label": "red cloud = OPEN ISSUE (decide + log)",
+   "dash_px": null,
+   "colour": [
+    220,
+    20,
+    30
+   ]
+  }
+ },
+ "classes": {
+  "default": [
+   60,
+   60,
+   60
+  ],
+  "grid": [
+   90,
+   90,
+   90
+  ],
+  "level": [
+   30,
+   90,
+   200
+  ],
+  "datum": [
+   0,
+   0,
+   0
+  ],
+  "column": [
+   200,
+   40,
+   40
+  ],
+  "wall_structural": [
+   170,
+   30,
+   30
+  ],
+  "core": [
+   130,
+   40,
+   160
+  ],
+  "slab_edge": [
+   0,
+   120,
+   220
+  ],
+  "slab_void": [
+   0,
+   150,
+   80
+  ],
+  "beam": [
+   210,
+   110,
+   0
+  ],
+  "bracing": [
+   230,
+   80,
+   140
+  ],
+  "foundation": [
+   110,
+   70,
+   30
+  ],
+  "envelope_glazing": [
+   0,
+   160,
+   170
+  ],
+  "envelope_structure": [
+   230,
+   120,
+   0
+  ],
+  "cladding_panel": [
+   120,
+   160,
+   0
+  ],
+  "curtain_wall_grid": [
+   0,
+   130,
+   130
+  ],
+  "roof": [
+   150,
+   90,
+   40
+  ],
+  "opening": [
+   0,
+   90,
+   160
+  ],
+  "partition": [
+   120,
+   120,
+   200
+  ],
+  "room": [
+   90,
+   140,
+   90
+  ],
+  "stair": [
+   160,
+   100,
+   40
+  ],
+  "lift": [
+   100,
+   60,
+   140
+  ],
+  "ceiling_zone": [
+   150,
+   150,
+   220
+  ],
+  "raised_floor_zone": [
+   200,
+   160,
+   60
+  ],
+  "balustrade": [
+   90,
+   90,
+   160
+  ],
+  "site_boundary": [
+   200,
+   0,
+   0
+  ],
+  "hardscape": [
+   150,
+   120,
+   90
+  ],
+  "landscape": [
+   60,
+   150,
+   60
+  ],
+  "spot_level": [
+   0,
+   0,
+   160
+  ],
+  "road": [
+   110,
+   110,
+   110
+  ],
+  "context_building": [
+   140,
+   140,
+   140
+  ]
+ }
+}

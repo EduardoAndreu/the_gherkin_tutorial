@@ -1,0 +1,62 @@
+{
+ "schema_version": "1.0",
+ "status": "draft",
+ "project": {
+  "name": "<Building name>",
+  "address": "<address>",
+  "target_era": "existing | as-built | proposed (<which drawing set>)",
+  "source_sets": [{"id": "S1", "description": "<e.g. 2023 planning set, 24 sheets>", "era": "existing"}]
+ },
+ "coordinate_system": {
+  "units": "m",
+  "handedness": "right-handed, Z up",
+  "origin": "<e.g. intersection of grids A and 1 at ground FFL>",
+  "x_axis": "<e.g. along grid 1, A -> H>",
+  "y_axis": "<e.g. along grid A, 1 -> 9>",
+  "z_datum": {"description": "Z = 0 at <ground floor FFL>", "aod_m": {"value": 12.35, "unit": "m", "src": {"file": "<sheet>", "method": "level tag", "confidence": "high"}}},
+  "true_north_deg_from_plus_y": {"value": null, "src": {"file": "<site plan>", "method": "north arrow"}}
+ },
+ "sheets": [
+  {"id": "L00", "file": "<pdf>", "kind": "plan", "level": "L00", "scale": "1:100 @ A1", "era": "existing", "use": "structure, interior"}
+ ],
+ "grids": {
+  "lines": [
+   {"id": "A", "kind": "linear", "p0": [0, 0], "p1": [0, 40], "src": {"file": "<sheet>", "method": "grid line endpoints, calibrated"}}
+  ]
+ },
+ "levels": [
+  {"id": "L00", "name": "Ground", "use": "retail",
+   "ffl_m": {"value": 0.0, "unit": "m", "src": {"file": "<section>", "method": "level tag", "uncertainty_m": 0.005, "confidence": "high", "era": "existing"}},
+   "ssl_m": {"value": -0.15, "unit": "m", "src": {"file": "<section>", "method": "level tag", "uncertainty_m": 0.005, "confidence": "high"}},
+   "ceiling_m": null}
+ ],
+ "structure": {
+  "system": "<e.g. RC frame with flat slabs, steel core>",
+  "columns": [{"id": "A1", "grid": "A/1", "xy": [0, 0], "section": "<e.g. 450x450 RC or CHS 457x16>", "levels": ["L00", "L05"], "src": {"file": "<sheet>", "method": "column centre from vector rectangle"}}],
+  "cores": [{"id": "C1", "polygon_m": [[0, 0], [8, 0], [8, 6], [0, 6]], "src": {"file": "<sheet>", "method": "outer wall line"}}],
+  "walls": [],
+  "slabs": [{"level": "L01", "outline_m": [], "voids_m": [], "thickness_m": {"value": null, "note": "unknown - not dimensioned"}}],
+  "beams": [],
+  "bracing": [],
+  "special": {}
+ },
+ "envelope": {
+  "facades": [{"id": "F-N", "orientation": "north", "line_m": [[0, 40], [30, 40]], "system": "<curtain wall / brick / ...>", "module_m": null}],
+  "roof": {},
+  "profiles": {},
+  "special": {}
+ },
+ "floorplates": {"per_level": []},
+ "interior": {"rooms": [], "stairs": [], "lifts": [], "finishes": []},
+ "site": {"boundary_m": [], "spot_levels": [], "hardscape": [], "landscape": []},
+ "context": {"neighbours": [], "streets": []},
+ "assumptions": [
+  {"id": "A-1", "item": "slab thickness", "value": 0.25, "unit": "m", "reason": "not dimensioned on any sheet; typical for span", "applies_to": "all office levels"}
+ ],
+ "open_issues": [
+  {"id": "OI-1", "topic": "<what>", "description": "<what conflicts or is missing>", "options": ["<a>", "<b>"], "default": "<what to do if nobody decides>", "status": "open"}
+ ],
+ "changelog": [
+  {"version": "1.0", "date": "<YYYY-MM-DD>", "summary": "first extraction"}
+ ]
+}

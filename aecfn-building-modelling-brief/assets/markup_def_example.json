@@ -1,0 +1,23 @@
+{
+ "id": "STR_L01_plan",
+ "set": "STR",
+ "build_step": "1 structure",
+ "title": "Level 01 - structure",
+ "spec": "../../spec/spec.json",
+ "underlay": "../../underlays/PLN_L01.json",
+ "crop_world": [-5, -5, 45, 35],
+ "items": [
+  {"type": "polygon", "cls": "core", "kind": "measured", "pts_key": "structure.cores[id=C1].polygon_m",
+   "label": "Core C1 outer wall"},
+  {"type": "points", "cls": "column", "kind": "measured", "pts_key": "structure.columns[*].xy",
+   "label": "{n} columns at grid intersections"},
+  {"type": "polygon", "cls": "slab_edge", "kind": "measured", "pts_key": "structure.slabs[level=L01].outline_m",
+   "label": "Slab edge L01"},
+  {"type": "note", "cls": "beam", "kind": "observed", "at": [20, 15],
+   "text": "Downstand beams visible on grids B-D in construction photo", "source": "images/01_structure/STR-02_beams.jpg"},
+  {"type": "note", "cls": "slab_edge", "kind": "assumed", "at": [30, 5],
+   "text": "Slab 250 mm (assumption A-1) hung down from SSL", "source": "spec.assumptions[id=A-1]"},
+  {"type": "issue", "issue_id": "OI-1", "at": [8, 30], "r": 2.0,
+   "text": "Stair core differs between L01 and L02 sheets - see open_issues"}
+ ]
+}
