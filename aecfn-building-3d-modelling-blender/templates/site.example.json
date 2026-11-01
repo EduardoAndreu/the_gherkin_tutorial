@@ -1,0 +1,107 @@
+{
+  "_comment": "THIN pipeline spec for a measured brief (example shaped on the Gherkin package). The orchestrator owns this file; the measured source_spec is never edited. Keys marked ? are optional.",
+  "project": "the_gherkin", "title": "30 St Mary Axe (as built, 2024)", "units": "m", "profile": "high", "lean": true,
+  "source_spec": "spec/gherkin_spec.json",
+  "brief": {"readme": "00_README.md", "markups": "markups", "underlays": "underlays", "images": "images", "image_notes": "images/IMAGE_NOTES.md"},
+  "era": "2024 existing (as-built); 1999 proposal values are comparison only",
+  "decisions_log": "decisions_log.md",
+
+  "datums": {"Z_GROUND": 0.0},
+  "datum_rules": [
+    {"each": "levels[]", "where": "ffl_m", "name": "FFL_{level}", "value": "ffl_m"},
+    {"each": "levels[]", "where": "ssl_m", "name": "SSL_{level}", "value": "ssl_m"},
+    {"each": "diagrid.node_centre_z_m[]", "name": "NODE_{level}", "value": "z_m"}
+  ],
+  "imprint": ["FFL_*", "SSL_*"],
+  "sheet_datums": ["FFL_*", "NODE_*"],
+  "storeys": {"each": "levels[]", "name": "{name_asbuilt}", "elevation": "ffl_m"},
+  "below_ground_ok": ["D3_BAS_*", "D3_STR_Foot*", "D3_STR_Slab_B1*", "D3_STR_Core*"],
+
+  "zones": {
+    "structure": {"module": "zones.structure", "owner": "STR", "markups": "STR", "depends_on": []},
+    "base":      {"module": "zones.base",      "owner": "BAS", "markups": "BAS", "depends_on": []},
+    "facade":    {"module": "zones.facade",    "owner": "FAC", "markups": "FAC", "depends_on": ["structure"]},
+    "interior":  {"module": "zones.interior",  "owner": "INT", "markups": "INT", "depends_on": ["structure"]}
+  },
+  "libraries": {"zones/lib_envelope.py": "STR", "zones/lib_profiles.py": "FAC"},
+  "material_hooks?": ["zones.lib_materials"],
+
+  "underlays": {
+    "PLN_GF_2024_asbuilt":        {"z": "levels[level=0].ffl_m"},
+    "PLN_L02_PA1302_1999":        {"z": "levels[level=2].ffl_m"},
+    "PLN_L17_PA1317_1999":        {"z": "levels[level=17].ffl_m"},
+    "PLN_L17_CLEUD_2024_asbuilt": {"z": "levels[level=17].ffl_m"},
+    "PLN_L30_PA1330_1999":        {"z": "levels[level=30].ffl_m"},
+    "PLN_L38_PA1338_1999":        {"z": "levels[level=38].ffl_m"},
+    "PLN_ROOF_PA1100_1999":       {"z": "envelope.top.apex_z_m"},
+    "PLN_SITE_AT1100_plaza":      {"z": 0.0},
+    "SEC_CLEUD_2024_asbuilt_section": {"y": 0.0},
+    "SEC_PA1201_1999_section":        {"y": 0.0}
+  },
+  "overlays": [
+    {"underlay": "PLN_GF_2024_asbuilt", "tol_m": 0.10, "depth_m": 4.5},
+    {"underlay": "PLN_L17_CLEUD_2024_asbuilt", "tol_m": 0.10},
+    {"underlay": "SEC_CLEUD_2024_asbuilt_section", "tol_m": 0.10, "depth_m": 2.0},
+    {"underlay": "PLN_L02_PA1302_1999", "tol_m": 0.10, "expect_tol_m": 0.3},
+    {"underlay": "PLN_L17_PA1317_1999", "tol_m": 0.10, "expect_tol_m": 0.3},
+    {"underlay": "PLN_L30_PA1330_1999", "tol_m": 0.10, "expect_tol_m": 0.3},
+    {"underlay": "PLN_L38_PA1338_1999", "tol_m": 0.10, "expect_tol_m": 0.3},
+    {"underlay": "PLN_ROOF_PA1100_1999", "tol_m": 0.10, "expect_tol_m": 0.3, "cut_offset_m": -1.0},
+    {"underlay": "PLN_SITE_AT1100_plaza", "tol_m": 0.15, "expect_tol_m": 0.3},
+    {"underlay": "SEC_PA1201_1999_section", "tol_m": 0.10, "expect_tol_m": 0.3, "depth_m": 2.0}
+  ],
+  "overlay_cut_offset_m": 1.2,
+
+  "sheets": [
+    {"id": "01", "kind": "plan", "z": 9.7,  "title": "LEVEL 2 PLAN",  "underlay": "PLN_L02_PA1302_1999"},
+    {"id": "02", "kind": "plan", "z": 71.96, "title": "LEVEL 17 PLAN (MAX RADIUS)", "underlay": "PLN_L17_CLEUD_2024_asbuilt"},
+    {"id": "A-A", "kind": "section", "axis": "y", "value": 0.0, "title": "THROUGH THE TOWER AXIS", "underlay": "SEC_CLEUD_2024_asbuilt_section", "cutaway": true},
+    {"id": "E1", "kind": "elevation", "psi_deg": 159.0, "title": "ST MARY AXE ELEVATION (PA1205 projection u = r sin(theta - 159))"}
+  ],
+
+  "checks": [
+    {"id": "ssl_L{level}", "each": "levels[]", "where": "ssl_m", "type": "level", "match": "D3_STR_Slab_L{level}", "edge": "zmax", "expect": "{ssl_m}", "tol": 0.01},
+    {"id": "ffl_L{level}", "each": "levels[]", "where": "ffl_m", "type": "level", "match": "D3_INT_RaisedFloor_L{level}", "edge": "zmax", "expect": "{ffl_m}", "tol": 0.01},
+    {"id": "glz_r_L{level}", "each": "envelope.profile_r_of_z[]", "where": "r_glazing_m", "type": "radius_at_z", "match": ["D3_FAC_Glass*", "D3_FAC_Panel*"], "z": "{z_zone_sample_m}", "expect": "{r_glazing_m}", "stat": "max", "tol": 0.05},
+    {"id": "slab_r_L{level}", "each": "floorplates.per_level[]", "where": "r_slab_m.value", "type": "radius_at_z", "match": "D3_STR_Slab_L{level}", "z": "levels[level={level}].ssl_m", "expect": "./r_slab_m.value", "stat": "max", "tol": 0.05},
+    {"id": "nodes_xyz", "type": "points", "match": "D3_STR_Node", "expect_file": "spec/derived/nodes_xyz.json", "what": "origins", "tol": 0.05, "exact": true},
+    {"id": "aframe_legs", "type": "points", "match": "D3_BAS_AFrameLeg", "expect": "base.tower_base.aframe_leg_sections.legs[]", "what": "origins", "tol": 0.05},
+    {"id": "lw_apex_L{level}", "each": "floorplates.lightwells_model_per_level.levels[]", "where": "count", "type": "polygon", "match": "D3_STR_Slab_L{level}", "z": "levels[level={level}].ssl_m", "expect": "./polygons_m", "vertices": [0], "tol": 0.05},
+    {"id": "mullions_per_ring", "type": "count", "match": "D3_FAC_Mullion_R17", "expect": "cladding.panel_types.derived_module_geometry.mullions_per_ring"},
+    {"id": "apex", "type": "level", "match": "D3_FAC_Dome*", "edge": "zmax", "expect": "envelope.top.apex_z_m", "tol": 0.07}
+  ],
+  "_checks_note": "spec/derived/*.json are orchestrator-computed expectations (e.g. node xyz from diagrid.node_theta_rule x node_centre_z_m x r_structure); each file carries a _provenance field. Points in the source spec given as theta/r/z are accepted directly.",
+
+  "materials": {
+    "glass_clear":   {"fallback_rgb": [0.55, 0.65, 0.68], "describe": "clear low-e double glazing, light reflective", "images": ["FAC-02", "FAC-04"], "specular": 0.9, "roughness": [0.02, 0.08]},
+    "glass_dark":    {"fallback_rgb": [0.12, 0.14, 0.16], "describe": "dark body-tinted grey glass of the spiral bands", "images": ["FAC-01", "FAC-02"], "roughness": [0.02, 0.08]},
+    "alu_casing":    {"fallback_rgb": [0.92, 0.93, 0.94], "describe": "white faceted aluminium column casing", "images": ["FAC-04", "INT-02"], "metallic": 0.2},
+    "alu_mullion":   {"fallback_rgb": [0.78, 0.79, 0.80], "describe": "light grey extruded aluminium mullion", "images": ["FAC-04"]},
+    "steel_dome":    {"fallback_rgb": [0.05, 0.05, 0.05], "describe": "black painted steel dome members", "images": ["INT-04"]},
+    "granite_pale":  {"fallback_rgb": [0.72, 0.70, 0.66], "describe": "pale flamed granite paving", "images": ["BAS-01"]},
+    "granite_dark":  {"fallback_rgb": [0.20, 0.20, 0.21], "describe": "dark polished granite bench", "images": ["BAS-01"]},
+    "concrete":      {"fallback_rgb": [0.62, 0.62, 0.60], "describe": "fair-faced concrete topping", "images": ["STR-02"]},
+    "steel_grey":    {"fallback_rgb": [0.55, 0.56, 0.58], "describe": "galvanised steel beam with fire protection", "images": ["STR-02"]},
+    "ceiling_white": {"fallback_rgb": [0.90, 0.90, 0.90], "describe": "perforated white acoustic ceiling", "images": ["INT-02"]},
+    "carpet":        {"fallback_rgb": [0.35, 0.36, 0.38], "describe": "grey office carpet tile", "images": ["INT-03"]},
+    "stainless":     {"fallback_rgb": [0.80, 0.80, 0.80], "describe": "polished stainless steel", "images": ["INT-01"], "metallic": 1.0}
+  },
+  "ground_material": "granite_pale", "ground_size": 400,
+
+  "cameras": [
+    {"name": "Cam_01_Aerial_Hero", "loc": [220, -260, 150], "target": [0, 0, 95], "class": "wide", "lens": 50, "review": true},
+    {"name": "Cam_02_Street_StMaryAxe", "loc": [-70, -45, 1.6], "target": [0, 0, 60], "class": "wide", "lens": 18, "shift_y": 0.35, "review": true},
+    {"name": "Cam_03_Entrance_AFrames", "loc": [-20, -48, 1.6], "target": [0, -20, 6], "class": "medium", "lens": 28, "review": true},
+    {"name": "Cam_04_Node_Diamond_Detail", "loc": [-34, -4, 72], "target": [-27, 0, 73], "class": "close", "lens": 70},
+    {"name": "Cam_05_Lobby", "loc": [-10, -14, 1.6], "target": [8, 6, 3], "class": "medium", "lens": 24},
+    {"name": "Cam_06_Lightwell_Up", "loc": [21, 2, 71], "target": [24, 0, 95], "class": "medium", "lens": 20, "review": true},
+    {"name": "Cam_07_Lightwell_Edge", "loc": [17, 3, 72.4], "target": [24, -1, 71.5], "class": "close", "lens": 35},
+    {"name": "Cam_08_DomeBar", "loc": [-6, -8, 164], "target": [0, 0, 172], "class": "medium", "lens": 18},
+    {"name": "Cam_09_Elevation_StMaryAxe", "loc": [-150, -60, 90], "target": [0, 0, 90], "class": "ortho", "ortho_scale": 200, "overlay": "datums"},
+    {"name": "Cam_10_Site_Plan_Top", "loc": [0, 0, 400], "target": [0, 0, 0], "class": "ortho", "ortho_scale": 160, "overlay": "plan"},
+    {"name": "Cam_11_Section_AA_Cutaway", "loc": [0, -300, 90], "target": [0, 0, 90], "class": "ortho", "ortho_scale": 210, "review": true, "underlay": "SEC_CLEUD_2024_asbuilt_section"}
+  ],
+  "sun": {"elevation_deg": 42, "azimuth_deg": 200, "strength": 9, "sky_strength": 0.04, "sky_camera_strength": 0.9},
+  "exposure": -0.5, "atmosphere_density": 0.0025, "clip_end_min_m": 1000,
+  "pass_budget": 12
+}

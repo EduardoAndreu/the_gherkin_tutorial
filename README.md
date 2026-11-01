@@ -72,3 +72,48 @@ The skill's `scripts/` folder holds the Python tools Claude runs along the way, 
 | `validate.py` | Checks the brief before hand-over: every number has a source, every markup matches the spec, and no files are missing. |
 | `package_brief.py` | Gathers only what the modeller needs, runs the validation again, and zips the brief. |
 | `bmb_common.py` | Shared helpers used by the other scripts (reading the spec, paper sizes, scale maths). |
+
+
+# SKILL 2: 3D Modelling in Blender
+
+## What this skill does
+
+## What happens, step by step
+1. **Preflight.** It checks Blender, the venv, `.env` and that the brief package is complete. If anything is missing, it asks before starting.
+2. **Bootstrap.** It copies the pipeline into the project, starts a git repo and writes `spec/site.json` from the template.
+3. **Stage 00: read and plan.** It reads the package and writes the thin `site.json`: datums, zones in build order, drawing sheets, checks and cameras. It also seeds one Python module per zone (structure, facade, interior, base).
+4. **Checklists and decisions.** The markups become a checklist for each zone. Every unknown value and open issue needs a row in `decisions_log.md` before the build can continue.
+5. **Blueprint.** It generates the geometry from the spec: CSG solids for slabs, cores and voids, and parametric meshes and instances for members, mullions and panels. Outputs are an IFC4 model per discipline, a DXF, and a multi-panel blueprint drawn over the real drawings.
+6. **Measured gate.** It checks levels, radii, node points, polygons and counts against the spec. One failure blocks the pass.
+7. **Overlay gate.** It draws the model's linework over every calibrated drawing and reports how far apart they are in metres.
+8. **Compile.** It builds the Blender scene at 1:1. This adds datum edge loops, metric UVs, PBR materials, hidden reference drawings, the camera rig and section cutaways. A QA gate then checks names, budgets and cameras.
+9. **Gauntlet loop.** One subagent works on each zone, in dependency order. A zone is frozen once it passes its gates. Each pass, a fresh adversarial critic scores the renders against the photos. The orchestrator turns the critic's findings into work orders and repeats until the score plateaus or the pass budget runs out.
+10. **Delivery.** You get a 6-camera Cycles showcase, a section cutaway next to the as-built section, an overlay matrix, a before/after progression matrix, styled IFCs, `decisions_log.md` and `REPORT.md`.
+
+
+
+## The scripts in the skill
+
+| Script | What it does |
+|---|---|
+| `pipeline/run.py` | Single entry point: every command (`cycle`, `measure`, `render`, `freeze`, `status`…) and the run state. |
+| `pipeline/aep_spec.py` | Loads `site.json` and the measured spec, and derives the named datums (`FFL_17`, `SSL_17`…). |
+| `pipeline/specq.py` | Small query language for reading values out of the large spec JSON. |
+| `pipeline/markup_checklist.py` | Turns markup callouts into per-zone checklists and issue/assumption registers. |
+| `pipeline/decisions.py` | Checks that every assumption and open issue has a row in `decisions_log.md`. |
+| `pipeline/stage01_blueprint.py` | Builds the zone geometry, validates it and draws the N-panel ANSI31 blueprint. |
+| `pipeline/geom_io.py` | Saves and loads geometry as `.npz` files plus a manifest, so Python and Blender can share it. |
+| `pipeline/linework.py` | Cuts meshes with planes and extracts feature edges for drawings. |
+| `pipeline/ifc_export.py` | Writes IFC4 files per discipline with storeys, IFC classes, styled materials and mapped instances. |
+| `pipeline/ifc_styles.py` | Renders a swatch of each Blender material so IFC colours match the render. |
+| `pipeline/measure.py` | Measured gate: level, extent, radius, point, polygon and count checks against the spec. |
+| `pipeline/overlay.py` | Overlay gate: draws the model over each underlay and reports deviation figures and a matrix. |
+| `pipeline/underlays.py` | Reads the calibrated drawings' sidecars and converts between pixels and world coordinates. |
+| `pipeline/stage03_compile.py` | Compiles everything 1:1 into a Blender scene: materials, reference planes, cameras, cutaways. |
+| `pipeline/aep_blender.py` | Blender helpers: datum imprinting, metric UVs, PBR, lighting and studio polish. |
+| `pipeline/qa_checks.py` | QA gate inside Blender: naming, hidden references, tri budget, camera clipping. |
+| `pipeline/stage04_render.py` | Renders a pass's cameras with Cycles, one render at a time. |
+| `pipeline/contact_sheet.py` | Builds labelled contact sheets and the before/after progression matrix. |
+| `zones/_template.py` | Starting point for a zone module (assumptions, solids, meshes, instances, materials). |
+| `zones/lib_geom.py` | Parametric geometry kit: prisms, sweeps, tubes, panels, revolves and ring arrays. |
+
