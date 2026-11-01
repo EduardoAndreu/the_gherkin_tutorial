@@ -9,9 +9,11 @@ text length, scale notations found ('1:100', '1:100 @ A1', NTS), likely drawing 
   OUT/thumbs/*.png        ~1200 px thumbnails (first page)
   OUT/contact_*.png       labelled contact sheets of all thumbnails
 
-The title-block guesses are heuristics: always look at the thumbnails and correct the index.
+Run it on the cropped sheets from sheet_prep.py with --sheets: the index then carries the drawing number, title,
+revision, scale and paper read from each title block (and the measured sheet size) instead of the text guesses.
+Without --sheets the title-block guesses are heuristics: always look at the thumbnails and correct the index.
 
-usage: inventory.py SRC_DIR OUT_DIR [--tb-corner br|bl|tr|tl] [--tb-frac 0.35]
+usage: inventory.py SRC_DIR OUT_DIR [--sheets sheets.json] [--tb-corner br|bl|tr|tl] [--tb-frac 0.35]
 """
 import argparse, hashlib, re, sys
 from pathlib import Path
@@ -20,7 +22,7 @@ import pymupdf
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).parent))
-from bmb_common import iso_size, parse_scales, NTS_RE, PT_TO_MM, save_json, font
+from bmb_common import iso_size, parse_scales, NTS_RE, PT_TO_MM, load_json, save_json, font
 
 DOCNO_RE = re.compile(r'\b([A-Z]{1,4}[-_ ]?\d{2,5}(?:[-_.]\d{1,4}){0,3}[A-Z]?)\b')
 DOC_WORDS = re.compile(r'\b(application|statement|report|letter|notice|schedule|appendix|contents|introduction)\b', re.I)
@@ -91,7 +93,15 @@ def main():
     ap.add_argument('src'); ap.add_argument('out')
     ap.add_argument('--tb-corner', default='br', choices=['br', 'bl', 'tr', 'tl'])
     ap.add_argument('--tb-frac', type=float, default=0.35)
+    ap.add_argument('--sheets', help='sheets.json from sheet_prep.py: use the recorded title-block values')
     a = ap.parse_args()
+    tb = {}
+    if a.sheets:
+        for e in load_json(a.sheets)['sheets']:
+            if e.get('sheet_pdf'):
+                tb[Path(e['sheet_pdf']).name] = dict(e.get('read') or {}, sheet_size_mm=e.get('sheet_size_mm'),
+                                                     paper_measured_iso=e.get('paper_measured_iso'),
+                                                     check_note=e.get('check_note'), source=e.get('source'))
     src, out = Path(a.src), Path(a.out); (out / 'thumbs').mkdir(parents=True, exist_ok=True)
     recs, thumbs = [], []
     files = sorted(p for p in src.rglob('*') if p.is_file() and not p.name.startswith('.'))
@@ -118,6 +128,10 @@ def main():
                 rec['class'] = 'other'
         except Exception as e:
             rec['error'] = repr(e)
+        if f.name in tb:
+            rec['title_block'] = tb[f.name]
+        elif tb:
+            rec['title_block_missing'] = 'not in sheets.json: run sheet_prep.py on this file'
         recs.append(rec)
         print(f"{rec.get('class','?'):24s} {rec['file']}")
     dup = {}
@@ -132,17 +146,23 @@ def main():
     try:
         import openpyxl
         wb = openpyxl.Workbook(); ws = wb.active; ws.title = 'Drawing index'
-        hdr = ['File', 'Class', 'Pages', 'Paper (page)', 'Content', 'Scale(s) found', 'NTS', 'Drawing no. (guess)',
-               'Title (guess)', 'CAD layers', 'Identical to', 'Use in brief? (Y/N)', 'Era (existing/proposed/as-built)', 'Notes']
+        rd = bool(tb)
+        hdr = ['File', 'Class', 'Pages', 'Paper (stated)' if rd else 'Paper (page)', 'Sheet size mm (measured)', 'Content',
+               'Scale (stated)' if rd else 'Scale(s) found', 'NTS', 'Drawing no.' if rd else 'Drawing no. (guess)', 'Rev',
+               'Title' if rd else 'Title (guess)', 'Date', 'CAD layers', 'Identical to', 'Use in brief? (Y/N)',
+               'Era (existing/proposed/as-built)', 'Notes']
         ws.append(hdr)
         for r in recs:
-            p = (r.get('pages') or [{}])[0]
-            ws.append([r['file'], r.get('class'), r.get('n_pages'), p.get('iso') or (str(p.get('size_mm')) if p else None),
-                       p.get('content'), ', '.join(s['text'] for s in p.get('scales', [])) or None, p.get('nts'),
-                       ', '.join(p.get('drawing_no_candidates', [])) or None, ' | '.join(p.get('title_candidates', [])[:2]) or None,
+            p = (r.get('pages') or [{}])[0]; t = r.get('title_block') or {}
+            ws.append([r['file'], r.get('class'), r.get('n_pages'),
+                       t.get('paper') if rd else p.get('iso') or (str(p.get('size_mm')) if p else None),
+                       str(t.get('sheet_size_mm') or p.get('size_mm')), p.get('content'),
+                       t.get('scale') if rd else ', '.join(s['text'] for s in p.get('scales', [])) or None, p.get('nts'),
+                       t.get('drawing_no') if rd else ', '.join(p.get('drawing_no_candidates', [])) or None, t.get('revision'),
+                       t.get('title') if rd else ' | '.join(p.get('title_candidates', [])[:2]) or None, t.get('date'),
                        len(p.get('layers', []) or r.get('ocg_layers', [])) or None, ', '.join(r.get('identical_to', [])) or None,
-                       None, None, r.get('error')])
-        for col, w in zip('ABCDEFGHIJKLMN', [48, 14, 6, 12, 9, 22, 6, 20, 48, 8, 30, 10, 18, 30]):
+                       None, None, '; '.join(x for x in (r.get('error'), t.get('check_note'), r.get('title_block_missing')) if x) or None])
+        for col, w in zip('ABCDEFGHIJKLMNOPQ', [48, 14, 6, 10, 16, 9, 16, 6, 14, 5, 40, 12, 8, 30, 10, 18, 40]):
             ws.column_dimensions[col].width = w
         ws.freeze_panes = 'A2'; ws.auto_filter.ref = ws.dimensions
         wb.save(out / 'drawing_index.xlsx')

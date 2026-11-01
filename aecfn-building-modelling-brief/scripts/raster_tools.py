@@ -71,8 +71,8 @@ class Sheet:
         return np.asarray(u) / self.sx + self.rect.x0, np.asarray(v) / self.sy + self.rect.y0
 
     def box_px(self, box):
-        if not box:
-            return 0, 0, self.img.shape[1], self.img.shape[0]
+        if not box:  # the visible page: a sheet cropped by sheet_prep.py keeps the scan beyond its crop box
+            box = (self.page_rect.x0, self.page_rect.y0, self.page_rect.x1, self.page_rect.y1)
         (u0, v0), (u1, v1) = self.pt2px(box[0], box[1]), self.pt2px(box[2], box[3])
         return int(max(0, u0)), int(max(0, v0)), int(min(self.img.shape[1], u1)), int(min(self.img.shape[0], v1))
 

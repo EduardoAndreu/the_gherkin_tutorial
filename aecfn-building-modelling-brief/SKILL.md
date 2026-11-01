@@ -7,21 +7,27 @@ description: Turn architectural blueprint PDFs (plans, sections, elevations, det
 
 The brief makes the modeller accurate. Ship only `spec.json` (every value with provenance), underlays, markups, images + `IMAGE_NOTES.md` and `00_README.md`. Extra material confuses the modeller.
 
-Scripts are in `scripts/` (Python 3: `pymupdf numpy opencv-python pillow openpyxl matplotlib`); run any with `--help`. Templates are in `assets/`. Work in `<project>/brief_work/` (`inventory/ calibration.json spec/ underlays/ markup_defs/ markups/ images/ brief/`). Tell the user each key decision as you make it: target era, sheet list, world frame, open issues.
+Scripts are in `scripts/` (Python 3: `pymupdf numpy opencv-python pillow openpyxl matplotlib`); run any with `--help`. Templates are in `assets/`. Work in `<project>/brief_work/` (`sheets/ inventory/ calibration.json spec/ underlays/ markup_defs/ markups/ images/ brief/`). Tell the user each key decision as you make it: target era, sheet list, world frame, open issues.
 
 ## Phases
 **0. Intake.** Confirm, asking only what you can't infer: source and photo folders, scope and **one target era**.
 
-**1. Inventory.** Run `inventory.py <dir> brief_work/inventory`, look at every contact sheet, and correct `drawing_index.xlsx`. Drop duplicates and superseded revisions. Select one plan per floor type, the governing sections, one elevation per facade type, the details of repeating modules, and the site plan. Check `content`: scanned (image-only) sheets need the raster route.
+**1. Sheets (before anything else).** Run `sheet_prep.py detect <dir> brief_work/sheets`. For every drawing (PDF page or TIF/PNG/JPG scan), it finds the **drawing frame**: the ruled border around the drawing and its title-block column, not the paper edge. Scans are often tilted and sheared, so it straightens them before searching, and it handles frames that are open at the bottom. It snaps each side onto the drawn border line, then renders `previews/`, `corners/` (each frame corner zoomed in) and `titleblocks/`.
+- Look at every preview and corner sheet. Each corner must sit on the border line; everything outside the frame (print-size ruler, scale table, clips, empty paper) goes. Where the detector found no frame or picked the wrong rectangle, set `frame.corners_pt` [TL, TR, BR, BL] by eye from the preview ruler, then run `detect --only ID --keep-boxes --snap`.
+- Fill `read` from the title block exactly as written: drawing number, title, revision, date, project, author, **scale** (`1:100 @ A1`, `NTS`) and **paper** (`A1`). Write `not shown` when absent; never guess. Set `reviewed: true`.
+- Run `sheet_prep.py apply brief_work/sheets/sheets.json` until it reports 0 errors. It straightens and crops each sheet to its frame (+3 mm), writing `png/` to look at and `cropped/` PDFs at the scan's own scale. It also checks the frame size against the stated paper: when the scan is not at paper size, it gives no stated metres-per-point.
+- **From here on, use only the cropped PDFs.** PDF-point coordinates refer to the cropped page. The stated scale is at best a first estimate; calibrate from references.
 
-**2. Frame and calibration.**
+**2. Inventory.** Run `inventory.py brief_work/sheets/cropped brief_work/inventory --sheets brief_work/sheets/sheets.json`, look at every contact sheet, and correct `drawing_index.xlsx`. Drop duplicates and superseded revisions. Select one plan per floor type, the governing sections, one elevation per facade type, the details of repeating modules, and the site plan. Check `content`: scanned (image-only) sheets need the raster route.
+
+**3. Frame and calibration.**
 - First fix `spec.coordinate_system`: origin at a grid intersection (or the centre of a round building), axes along the main grid, Z=0 at ground FFL with its AOD.
 - **Vector sheets:** use `calibrate.py plan|section` with 2+ far-apart references and at least one `--check` dimension per sheet. Find grid bubbles and level tags with `pdf_vectors.py text --regex`, and line crossings with `calibrate.py intersect`.
 - **Scanned sheets:** use `raster_tools.py bubbles` → `calibrate.py autogrid` with one anchor per axis (`--min-r-pt` drops sub-grid bubbles). For sections, `raster_tools.py lines` → `pair_levels.py`. Fit z and s separately, and ignore the scanned page size.
 - Fitted scale must match the stated scale within 0.3%. Investigate anything over 0.5%: a wrong reference, a different print size (1:100 @ A1 on A3 is 1:200), or a stretched export.
 - For sections and elevations, record the cut or view line (`--line`). Fit the azimuth for curved facades, and negate s if it runs right-to-left.
 
-**3. Spec** (start from `assets/spec_template.json`). Extract in this order: levels → grids → structure → envelope → floor plates and interior → site and context.
+**4. Spec** (start from `assets/spec_template.json`). Extract in this order: levels → grids → structure → envelope → floor plates and interior → site and context.
 - Every number is `{value, unit, src:{file, method, uncertainty_m, confidence, era}}`.
 - Confidence is **high** when written or cross-checked, **medium** when measured but unchecked, **low** when inferred.
 - Preference order: written > measured > inferred.
@@ -33,9 +39,9 @@ Scripts are in `scripts/` (Python 3: `pymupdf numpy opencv-python pillow openpyx
 - **Never use remembered figures.** Put them only in `sanity_checks`, marked unverified.
 - On a change: bump `schema_version`, add a changelog entry, archive the old file, and mark replaced keys `superseded_by` (never delete them).
 
-**4. Underlays.** Run `rectify.py --db calibration.json --id … --out underlays --ppm 50` (15–25 for tall sections). Check each one by drawing 2–3 spec items taken from a *different* sheet: they must land on the linework.
+**5. Underlays.** Run `rectify.py --db calibration.json --id … --out underlays --ppm 50` (15–25 for tall sections). Check each one by drawing 2–3 spec items taken from a *different* sheet: they must land on the linework.
 
-**5. Markups.** Make sets STR, FAC, INT, SITE with about 6–12 sheets each. Write definitions from `assets/markup_def_example.json` and render them with `markup.py`.
+**6. Markups.** Make sets STR, FAC, INT, SITE with about 6–12 sheets each. Write definitions from `assets/markup_def_example.json` and render them with `markup.py`.
 - **Measured items** use `*_key` fields and `{placeholder}` labels, never literal numbers (unless `literal_ok`).
 - **Assumed items** cite `A-n`. **Observed items** cite their source. **Issue items** carry their `issue_id`.
 - Use the classes in `assets/style.json`.
@@ -43,11 +49,11 @@ Scripts are in `scripts/` (Python 3: `pymupdf numpy opencv-python pillow openpyx
 - **Never move the drawing to fit.**
 - Run the full `validate.py --spec --markups --underlays` until it reports 0 errors, then fix or explain every warning. Re-render after any spec change.
 
-**6. Images.** Run `curate_images.py scan`, look at every preview, and drop near-duplicates (keep the highest resolution) and off-topic images. Write a mapping CSV (`01_structure/STR-01_<what>.jpg`), then run `curate_images.py apply`. Write `IMAGE_NOTES.md` from its template: what each image shows (in spec terms), what to use it for, what to ignore, lens caveats, and the build-up knowns and unknowns.
+**7. Images.** Run `curate_images.py scan`, look at every preview, and drop near-duplicates (keep the highest resolution) and off-topic images. Write a mapping CSV (`01_structure/STR-01_<what>.jpg`), then run `curate_images.py apply`. Write `IMAGE_NOTES.md` from its template: what each image shows (in spec terms), what to use it for, what to ignore, lens caveats, and the build-up knowns and unknowns.
 
-**7. READMEs.** Fill `00_README.md` and `markups/README.md` from the `assets/` templates. In `00_README.md`, name the real spec keys (check each with `bmb_common.get_path`), state the achieved accuracy, and list the expected era differences.
+**8. READMEs.** Fill `00_README.md` and `markups/README.md` from the `assets/` templates. In `00_README.md`, name the real spec keys (check each with `bmb_common.get_path`), state the achieved accuracy, and list the expected era differences.
 
-**8. Package.** Run `package_brief.py --name … --out … --readme --spec --underlays --markups --markups-readme --images`. It re-validates and refuses to zip if there are errors.
+**9. Package.** Run `package_brief.py --name … --out … --readme --spec --underlays --markups --markups-readme --images`. It re-validates and refuses to zip if there are errors.
 
 **Report:** the zip path and contents, accuracy per sheet type, the open issues that affect geometry (with their defaults), the assumptions, and anything unresolved. Keep `brief_work/` for rebuilds.
 
@@ -66,4 +72,5 @@ Scripts are in `scripts/` (Python 3: `pymupdf numpy opencv-python pillow openpyx
 - Register elevations on AOD markers (z) and on members that sit on grid lines (s), not on silhouettes.
 - Detected lines give both edges of a member; take the midline.
 - On hatched sheets, bubbles fail the halo test. Use `--halo-max 0.7` or a per-sheet anchor.
+- Scanned sheets are often not at paper size (archive scanners output every sheet at about the same size), and scale bars can disagree with the drawing by as much as 20 %. Trust calibration on drawn references over both.
 - Drive repeated tool calls from Python with argument lists; shell loops pass quoted arguments as one string.
