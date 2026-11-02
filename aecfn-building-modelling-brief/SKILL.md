@@ -1,6 +1,6 @@
 ---
 name: aecfn-building-modelling-brief
-description: Turn architectural blueprint PDFs (plans, sections, elevations, details) and photos into a verified, zipped modelling brief for a Blender/IFC reconstruction agent. The brief holds a calibrated world frame, a spec JSON with provenance, true-scale underlays, colour-coded markups traced to spec keys and image notes. Use whenever someone wants to model, reconstruct or digitise a building from drawings, extract levels, grids or dimensions from architectural PDFs, or prepare drawings for a 3D modelling agent, even if they don't say "brief" or "spec".
+description: Turn architectural blueprint PDFs (plans, sections, elevations, details) and photos into a verified modelling brief folder for a Blender/IFC reconstruction agent. The brief holds a calibrated world frame, a spec JSON with provenance, true-scale underlays, colour-coded markups traced to spec keys and image notes. Use whenever someone wants to model, reconstruct or digitise a building from drawings, extract levels, grids or dimensions from architectural PDFs, or prepare drawings for a 3D modelling agent, even if they don't say "brief" or "spec".
 ---
 
 # Blueprint → modelling brief
@@ -53,9 +53,9 @@ Scripts are in `scripts/` (Python 3: `pymupdf numpy opencv-python pillow openpyx
 
 **8. READMEs.** Fill `00_README.md` and `markups/README.md` from the `assets/` templates. In `00_README.md`, name the real spec keys (check each with `bmb_common.get_path`), state the achieved accuracy, and list the expected era differences.
 
-**9. Package.** Run `package_brief.py --name … --out … --readme --spec --underlays --markups --markups-readme --images`. It re-validates and refuses to zip if there are errors.
+**9. Package.** Run `package_brief.py --out <brief folder> --readme --spec --underlays --markups --markups-readme --images`. It assembles and re-validates the brief in a staging folder and writes it to `--out` only if there are no errors.
 
-**Report:** the zip path and contents, accuracy per sheet type, the open issues that affect geometry (with their defaults), the assumptions, and anything unresolved. Keep `brief_work/` for rebuilds.
+**Report:** the brief folder path and contents, accuracy per sheet type, the open issues that affect geometry (with their defaults), the assumptions, and anything unresolved. Keep `brief_work/` for rebuilds.
 
 **Multi-agent** (only if asked): the orchestrator owns the frame, the sheet list, the style, the merge and the review. It calibrates one plan and one section first, then runs STR, FAC, INT and SITE specialists in parallel, each in its own folder. Before accepting their work, it looks at their previews itself and cross-checks the domains (structure vs envelope levels, slab edge vs facade line, site datum vs ground FFL).
 

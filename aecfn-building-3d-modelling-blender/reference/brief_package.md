@@ -5,7 +5,6 @@ logged as an assumption, never filled from memory or a generated image.
 
 ```
 <brief>/
-  PROMPT.md                  the task: building, era, zones, gates, deliverables
   00_README.md               reading order, precedence, coordinate system, era, key spec fields, unknowns
   spec/<building>_spec.json  SINGLE SOURCE OF TRUTH for every dimension (read-only)
   markups/<SET>/             one set per build domain (STR, FAC, INT, BAS …)
@@ -27,4 +26,4 @@ counts, modules, mm profiles); `open_issues[]`; provenance on values. Unknowns a
 
 **Preparing a package (outside this skill):** pick the era and register every sheet to one frame → measure governing
 values into the spec with provenance → one markup set per domain with callouts citing spec keys → resample key
-plans/sections to a fixed m/px with the origin pixel → keynote each photo → README + PROMPT.
+plans/sections to a fixed m/px with the origin pixel → keynote each photo → README.

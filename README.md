@@ -37,14 +37,15 @@ Swap in your own building and folders. Claude will ask about anything it can't w
 
    ![Section with every floor level marked](images/SK01-05_markup_section-levels.png)
 
+
 5. **Sorting the photos:** Claude removes duplicates, files the photos in build order, and writes a note for each one: what it shows, what to use it for (materials, colours, how parts join) and what to ignore. Photos are never used for measurements, but area a crucial reference
 
 6. **Final checks:** Claude runs a final check, making sure every number traces back to a drawing and every marked-up sheet matches the spec. 
 
 ## What you get
-One zip file (for the Gherkin, `gherkin_brief_v1.1.zip`) containing:
+One folder (for the Gherkin, `gherkin_brief_v1.1`) containing:
 
-| In the zip | What it's for |
+| In the folder | What it's for |
 |---|---|
 | `00_README.md` | A guide to the package |
 | `spec/` | The master file of measurements |
@@ -55,7 +56,6 @@ One zip file (for the Gherkin, `gherkin_brief_v1.1.zip`) containing:
 Claude also tells you how accurate the result is and which questions still need a human decision.
 
 ## The scripts in the skill
-The skill's `scripts/` folder holds the Python tools Claude runs along the way, listed here in the order they're used.
 
 | Script | What it does |
 |---|---|
@@ -70,26 +70,47 @@ The skill's `scripts/` folder holds the Python tools Claude runs along the way, 
 | `markup.py` | Draws the measured values from the spec back onto the underlays as colour-coded markups. |
 | `curate_images.py` | Finds duplicate photos, makes previews, and files the chosen photos into folders under clear names. |
 | `validate.py` | Checks the brief before hand-over: every number has a source, every markup matches the spec, and no files are missing. |
-| `package_brief.py` | Gathers only what the modeller needs, runs the validation again, and zips the brief. |
+| `package_brief.py` | Gathers only what the modeller needs into the brief folder, and runs the validation again before writing it. |
 | `bmb_common.py` | Shared helpers used by the other scripts (reading the spec, paper sizes, scale maths). |
 
 
 # SKILL 2: 3D Modelling in Blender
 
 ## What this skill does
+You give Claude the brief folder made by Skill 1. Claude rebuilds the building in Blender at real size, with structure, facade, interior and site, taking every dimension from the brief's measurements. Before anything is judged by eye, the model is checked against numbers: floor levels and radii against the spec, and the model's outline laid over every drawing. A team of Claude agents then refines the model pass by pass, each one owning one part of the building, while a fresh reviewer scores every round of renders against the photos. You get Cycles renders, a section cut beside the real section drawing, IFC files and a report.
+
+## How to run it
+1. Install the `aecfn-building-3d-modelling-blender` folder in your project's `.claude/skills/` folder.
+2. Install Blender 5.2 and a Python 3.11 (or newer) environment with `manifold3d ifcopenshell ezdxf matplotlib pillow numpy`.
+3. Put the brief folder from Skill 1 in the project, open Claude Code there, and use your own version of the following prompt:
+
+> Build a complete multi-zone 3D architectural reconstruction of **30 St Mary Axe (the Gherkin)** in Blender using the `aecfn-building-3d-modelling-blender` pipeline.
+> Brief package: `gherkin_brief_v1.1/`. Read `00_README.md` first. Never edit `spec/gherkin_spec.json`, the markups, the underlays or the images.
+> Spawn parallel Opus 5.5 specialist subagents managed and reviewed by an Opus 5.5 Orchestrator (`Model="inherit"` for all).
+> Give every photo a matching camera, rendering in Cycles a showcase and a Before-vs-After progression matrix.
+> Run caffeinate for the whole run. Ask me if anything is missing.
+
+Swap in your own building and brief folder. Before building, Claude confirms the era, the coordinate frame, the zones and the accuracy targets with you. Long runs take hours: `caffeinate` keeps a Mac awake.
+
 
 ## What happens, step by step
 1. **Preflight.** It checks Blender, the venv, `.env` and that the brief package is complete. If anything is missing, it asks before starting.
 2. **Bootstrap.** It copies the pipeline into the project, starts a git repo and writes `spec/site.json` from the template.
-3. **Stage 00: read and plan.** It reads the package and writes the thin `site.json`: datums, zones in build order, drawing sheets, checks and cameras. It also seeds one Python module per zone (structure, facade, interior, base).
+3. **Read and plan.** It reads the package and writes the thin `site.json`: datums, zones in build order, drawing sheets, checks and cameras. It also seeds one Python module per zone (structure, facade, interior, base).
 4. **Checklists and decisions.** The markups become a checklist for each zone. Every unknown value and open issue needs a row in `decisions_log.md` before the build can continue.
 5. **Blueprint.** It generates the geometry from the spec: CSG solids for slabs, cores and voids, and parametric meshes and instances for members, mullions and panels. Outputs are an IFC4 model per discipline, a DXF, and a multi-panel blueprint drawn over the real drawings.
 6. **Measured gate.** It checks levels, radii, node points, polygons and counts against the spec. One failure blocks the pass.
 7. **Overlay gate.** It draws the model's linework over every calibrated drawing and reports how far apart they are in metres.
 8. **Compile.** It builds the Blender scene at 1:1. This adds datum edge loops, metric UVs, PBR materials, hidden reference drawings, the camera rig and section cutaways. A QA gate then checks names, budgets and cameras.
 9. **Gauntlet loop.** One subagent works on each zone, in dependency order. A zone is frozen once it passes its gates. Each pass, a fresh adversarial critic scores the renders against the photos. The orchestrator turns the critic's findings into work orders and repeats until the score plateaus or the pass budget runs out.
-10. **Delivery.** You get a 6-camera Cycles showcase, a section cutaway next to the as-built section, an overlay matrix, a before/after progression matrix, styled IFCs, `decisions_log.md` and `REPORT.md`.
 
+   ![Seven cameras at each review pass, P00 to P05, and their final renders](images/SK02-01_progression_matrix.jpg)
+
+10. **Delivery.** You get a rendered Cycles showcase, a section cutaway next to the as-built section, an overlay matrix, a before/after progression matrix, styled IFCs, `decisions_log.md` and `REPORT.md`.
+
+    The same three views in the Blender viewport (left) and as final Cycles renders (right): the entrance A-frames, a diagrid node, and the upper taper and dome.
+
+    ![Blender viewport next to the final Cycles render for three views](images/SK02-02_viewport_vs_render.jpg)
 
 
 ## The scripts in the skill

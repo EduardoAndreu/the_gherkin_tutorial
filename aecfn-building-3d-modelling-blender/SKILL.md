@@ -47,7 +47,7 @@ Instances are free in the tri budget. Keep repeated prototypes ≤ 400 tris, gla
 
 ## 2. Stage 00 — thin spec and zones
 
-Read `PROMPT.md`, `00_README.md`, the spec's `coordinate_system`, `levels[]`, each system block, `open_issues[]`, `markups/README.md`, the markup previews, `images/IMAGE_NOTES.md`. Query the spec, never scroll it: `run q "levels[level=17].ffl_m"` (same syntax as the markups' `spec_key_query`).
+Read the user's prompt, `00_README.md`, the spec's `coordinate_system`, `levels[]`, each system block, `open_issues[]`, `markups/README.md`, the markup previews, `images/IMAGE_NOTES.md`. Query the spec, never scroll it: `run q "levels[level=17].ffl_m"` (same syntax as the markups' `spec_key_query`).
 
 **`spec/site.json`** (full example: `templates/site.example.json`) maps the package to the pipeline:
 `source_spec`, `brief` paths, hand `datums`, `datum_rules`, `imprint` / `sheet_datums` globs, `storeys` (IFC), `zones` (`module`, `owner`, `markups`, `depends_on`), `libraries` (shared kits → owner), `underlays` (z per drawing), `overlays` (`tol_m`, `expect_tol_m` for other eras, `depth_m`, `cut_offset_m`), `sheets` (plan / section / elevation, any number), `checks`, `materials`, `cameras`, `sun`, `exposure`, `ifc_export`, `pass_budget`, `lean`. Unknown rule values are skipped and listed in `spec["_datum_skipped"]`; a check with an unknown expectation reports *skipped*, never passed.
